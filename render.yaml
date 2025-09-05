@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: resume-analyzer-ai
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "streamlit run app.py --server.port $PORT --server.address 0.0.0.0"
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false  # set in Render Dashboard
+      - key: GENAI_MODEL
+        value: gemini-2.0-flash-lite
+      - key: GENAI_TEMPERATURE
+        value: "0"
+      - key: EMBEDDINGS_MODEL
+        value: models/embedding-001

@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.db
+*.sqlite3
+
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+
+# Streamlit
+.streamlit/
+
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+
+# System files
+.DS_Store
+Thumbs.db
+
+
+# Logs
+*.log
+
+
+# Temp
+/tmp/
+*.pdf
+*.txt
