@@ -1,9 +1,21 @@
+# Core UI
 streamlit
+
+# LangGraph / LangChain ecosystem
 langgraph
 langgraph-supervisor
+langchain
+langchain-core
 langchain-community
 langchain-google-genai
 langchain-text-splitters
+
+# Tokenization
+tiktoken
+
+# PDF + parsing
 PyPDF2
-pydantic
 beautifulsoup4
+
+# Data & validation
+pydantic
