@@ -10,6 +10,19 @@ from langchain.tools.retriever import create_retriever_tool
 from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
+import asyncio
+import sys
+
+# Ensure an event loop exists for gRPC async clients
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+try:
+    asyncio.get_running_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
 # Embedding model (requires GOOGLE_API_KEY in env)
 _embeddings_model = os.getenv("EMBEDDINGS_MODEL", "models/embedding-001")
 

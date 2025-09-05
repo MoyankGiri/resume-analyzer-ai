@@ -1,3 +1,18 @@
+import asyncio, sys
+
+# Ensure Streamlit's script thread always has a loop
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+try:
+    asyncio.get_running_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+import logging
+logging.basicConfig(level=logging.DEBUG, force=True)
+
 import os
 import traceback
 import streamlit as st

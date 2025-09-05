@@ -9,6 +9,8 @@ langchain-core
 langchain-community
 langchain-google-genai
 langchain-text-splitters
+grpcio
+grpcio-status
 
 # Tokenization
 tiktoken

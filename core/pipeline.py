@@ -21,7 +21,12 @@ MODEL_NAME = os.getenv("GENAI_MODEL", "gemini-2.0-flash-lite")
 TEMPERATURE = float(os.getenv("GENAI_TEMPERATURE", "0"))
 
 chat_model = ChatGoogleGenerativeAI(model=MODEL_NAME, temperature=TEMPERATURE)
-resume_knowledge_tool = setup_resume_knowledge_base()
+_resume_knowledge_tool = None
+def get_resume_knowledge_tool():
+    global _resume_knowledge_tool
+    if _resume_knowledge_tool is None:
+        _resume_knowledge_tool = setup_resume_knowledge_base()
+    return _resume_knowledge_tool
 
 def decide_analysis_type(state: ResumeAnalysisState):
     question = state["messages"][-1].content
@@ -77,6 +82,7 @@ def score_resume(state: ResumeAnalysisState):
 
 
 def retrieve_best_practices(state: ResumeAnalysisState):
+    resume_knowledge_tool = get_resume_knowledge_tool()
     scores = state.get("initial_score", {})
     resume_text = state.get("resume_text", "")
 
