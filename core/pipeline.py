@@ -164,7 +164,7 @@ def generate_improvement_suggestions(state: ResumeAnalysisState):
     RESUME:\n{resume_text}
     """
 
-    response = chat_model.invoke([{"role": "user", "content": prompt}])
+    response = chat_model.invoke([{"role": "user", "content": prompt}], max_token=1024)
 
     suggestions_list = [
         "Priority improvements",
