@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+from dotenv import load_dotenv
 from typing import Dict, Any, Literal, List
 
 from langgraph.graph import StateGraph, START, END
@@ -12,13 +13,17 @@ from core.scoring import ResumeAnalysisState, ResumeScore, AnalysisDecision
 from core.knowledge_base import setup_resume_knowledge_base
 
 # --------- Models & Config ---------
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+load_dotenv()
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+# GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
     # Fail early with a clear message in server logs (UI will show error)
-    print("[WARN] GOOGLE_API_KEY not set. Please configure it in Render Environment Variables.")
+    print("[WARN] GOOGLE_API_KEY not set. Please configure it in Environment Variables.")
 
-MODEL_NAME = os.getenv("GENAI_MODEL", "gemini-2.0-flash-lite")
-TEMPERATURE = float(os.getenv("GENAI_TEMPERATURE", "0"))
+MODEL_NAME = os.environ.get("GENAI_MODEL", "gemini-2.0-flash-lite")
+TEMPERATURE = float(os.environ.get("GENAI_TEMPERATURE", "0"))
+# MODEL_NAME = os.getenv("GENAI_MODEL", "gemini-2.0-flash-lite")
+# TEMPERATURE = float(os.getenv("GENAI_TEMPERATURE", "0"))
 
 chat_model = ChatGoogleGenerativeAI(model=MODEL_NAME, temperature=TEMPERATURE)
 _resume_knowledge_tool = None
