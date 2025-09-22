@@ -27,6 +27,7 @@ except RuntimeError:
 # Embedding model (requires GOOGLE_API_KEY in env)
 load_dotenv()
 _embeddings_model = os.environ.get("EMBEDDINGS_MODEL", "models/embedding-001")
+topk = os.environ.get("EMBEDDINGS_TOPK", "5")
 # _embeddings_model = os.getenv("EMBEDDINGS_MODEL", "models/embedding-001")
 
 
@@ -82,7 +83,7 @@ def setup_resume_knowledge_base():
     # Vector store
     embeddings = GoogleGenerativeAIEmbeddings(model=_embeddings_model)
     vstore = InMemoryVectorStore.from_documents(documents=splits, embedding=embeddings)
-    retriever = vstore.as_retriever(search_kwargs={"k": 5})
+    retriever = vstore.as_retriever(search_kwargs={"k": topk})
 
     # Turn into a tool usable by LangChain/LangGraph
     return create_retriever_tool(
