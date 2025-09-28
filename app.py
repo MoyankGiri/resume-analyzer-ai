@@ -24,13 +24,13 @@ from core.pipeline import analyze_resume, analyze_resume_from_file
 import hashlib
 
 @st.cache_data(show_spinner="Analyzing resume...")   # cache identical text/file analyses
-def cached_analyze_resume(text: str):
+def cached_analyze_resume(text: str, verbose: bool = False):
     key = hashlib.sha256(text.encode()).hexdigest()
-    return analyze_resume(text, verbose=False)
+    return analyze_resume(text, verbose=verbose)
 
 @st.cache_data(show_spinner="Analyzing resume...")   # cache file path analysis
-def cached_analyze_resume_from_file(path: str):
-    return analyze_resume_from_file(path, verbose=False)
+def cached_analyze_resume_from_file(path: str, verbose: bool = False):
+    return analyze_resume_from_file(path, verbose=verbose)
 
 st.set_page_config(page_title="Resume Analyzer AI", page_icon="📄", layout="wide")
 
