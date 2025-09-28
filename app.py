@@ -21,6 +21,16 @@ from ui.components import (
     show_analysis_markdown, side_about_panel, build_report_bytes
 )
 from core.pipeline import analyze_resume, analyze_resume_from_file
+import hashlib
+
+@st.cache_data(show_spinner="Analyzing resume...")   # cache identical text/file analyses
+def cached_analyze_resume(text: str):
+    key = hashlib.sha256(text.encode()).hexdigest()
+    return analyze_resume(text, verbose=False)
+
+@st.cache_data(show_spinner="Analyzing resume...")   # cache file path analysis
+def cached_analyze_resume_from_file(path: str):
+    return analyze_resume_from_file(path, verbose=False)
 
 st.set_page_config(page_title="Resume Analyzer AI", page_icon="📄", layout="wide")
 
@@ -48,7 +58,7 @@ with TAB_UPLOAD:
             temp_path = f"/tmp/{uploaded.name}"
             with open(temp_path, "wb") as f:
                 f.write(uploaded.read())
-            result = analyze_resume_from_file(temp_path, verbose=False)
+            result = cached_analyze_resume_from_file(temp_path, verbose=False)
 
             if "error" in result:
                 show_alert("error", result["error"]) 
@@ -77,7 +87,7 @@ with TAB_PASTE:
             show_alert("warning", "Please paste the complete resume (at least ~200 characters) for best results.")
         else:
             try:
-                result = analyze_resume(text, verbose=False)
+                result = cached_analyze_resume(text, verbose=False)
                 if "error" in result:
                     show_alert("error", result["error"]) 
                 else:

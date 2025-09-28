@@ -12,6 +12,9 @@ from core.processing import read_resume_file, clean_resume_text
 from core.scoring import ResumeAnalysisState, ResumeScore, AnalysisDecision
 from core.knowledge_base import setup_resume_knowledge_base
 
+import streamlit as st
+import hashlib
+
 # --------- Models & Config ---------
 load_dotenv()
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
@@ -26,12 +29,17 @@ TEMPERATURE = float(os.environ.get("GENAI_TEMPERATURE", "0"))
 # TEMPERATURE = float(os.getenv("GENAI_TEMPERATURE", "0"))
 
 chat_model = ChatGoogleGenerativeAI(model=MODEL_NAME, temperature=TEMPERATURE)
-_resume_knowledge_tool = None
+# _resume_knowledge_tool = None
+# def get_resume_knowledge_tool():
+#     global _resume_knowledge_tool
+#     if _resume_knowledge_tool is None:
+#         _resume_knowledge_tool = setup_resume_knowledge_base()
+#     return _resume_knowledge_tool
+
+@st.cache_resource(show_spinner=False)
 def get_resume_knowledge_tool():
-    global _resume_knowledge_tool
-    if _resume_knowledge_tool is None:
-        _resume_knowledge_tool = setup_resume_knowledge_base()
-    return _resume_knowledge_tool
+    """Initialize knowledge base once per process, and cache across reruns."""
+    return setup_resume_knowledge_base()
 
 def decide_analysis_type(state: ResumeAnalysisState):
     question = state["messages"][-1].content
@@ -230,8 +238,28 @@ resume_checker = workflow.compile()
 
 # --------- Public API ---------
 
+# def analyze_resume(input_text: str, verbose: bool = False) -> Dict[str, Any]:
+#     """Run the graph and collate results into a dict for the UI."""
+#     try:
+#         final_result: Dict[str, Any] = {"analysis": None, "scores": None, "suggestions": []}
+#         for chunk in resume_checker.stream({"messages": [{"role": "user", "content": input_text}]}):
+#             for _, update in chunk.items():
+#                 if verbose:
+#                     print({"node": _, "keys": list(update.keys())})
+#                 if "initial_score" in update:
+#                     final_result["scores"] = update["initial_score"]
+#                 if "improvement_suggestions" in update:
+#                     final_result["suggestions"] = update["improvement_suggestions"]
+#                 if "messages" in update and update["messages"]:
+#                     final_result["analysis"] = update["messages"][-1].content
+#         return final_result
+#     except Exception as e:
+#         return {"error": f"Pipeline error: {e}"}
+
+@st.cache_data(show_spinner="Analyzing resume...")
 def analyze_resume(input_text: str, verbose: bool = False) -> Dict[str, Any]:
-    """Run the graph and collate results into a dict for the UI."""
+    """Run the graph and collate results into a dict for the UI. Cached by hash of input."""
+    text_hash = hashlib.sha256(input_text.encode()).hexdigest()
     try:
         final_result: Dict[str, Any] = {"analysis": None, "scores": None, "suggestions": []}
         for chunk in resume_checker.stream({"messages": [{"role": "user", "content": input_text}]}):
@@ -242,7 +270,7 @@ def analyze_resume(input_text: str, verbose: bool = False) -> Dict[str, Any]:
                     final_result["scores"] = update["initial_score"]
                 if "improvement_suggestions" in update:
                     final_result["suggestions"] = update["improvement_suggestions"]
-                if "messages" in update and update["messages"]:
+                if "messages" in update and update["messages"] and isinstance(update["messages"][-1].content, str):
                     final_result["analysis"] = update["messages"][-1].content
         return final_result
     except Exception as e:

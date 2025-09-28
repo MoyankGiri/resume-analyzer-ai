@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 import asyncio
 import sys
+import streamlit as st
 
 # Ensure an event loop exists for gRPC async clients
 if sys.platform == "win32":
@@ -53,6 +54,7 @@ def _best_practices_blob() -> str:
     ).strip()
 
 
+@st.cache_resource(show_spinner=False)
 def setup_resume_knowledge_base():
     """Build an in-memory retriever tool with fallback content if web fails."""
     knowledge_urls: List[str] = [
@@ -62,6 +64,7 @@ def setup_resume_knowledge_base():
         "https://www.glassdoor.com/blog/guide/how-to-write-a-resume/",
     ]
 
+    # Start with static best practices
     docs = [Document(page_content=_best_practices_blob(), metadata={"source": "best_practices"})]
 
     loaded_any = False
@@ -73,19 +76,19 @@ def setup_resume_knowledge_base():
             docs.extend(web_docs)
             loaded_any = True
         except Exception:
-            # Some sites may block scrapers in PaaS environments; silently continue
             continue
 
-    # Split
+    # Split documents into chunks
     splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=800, chunk_overlap=100)
     splits = splitter.split_documents(docs)
 
-    # Vector store
+    # Embeddings - cached by Streamlit to avoid re-calling embed_content
     embeddings = GoogleGenerativeAIEmbeddings(model=_embeddings_model)
+
     vstore = InMemoryVectorStore.from_documents(documents=splits, embedding=embeddings)
     retriever = vstore.as_retriever(search_kwargs={"k": topk})
 
-    # Turn into a tool usable by LangChain/LangGraph
+    # Return retriever tool
     return create_retriever_tool(
         retriever,
         "retrieve_resume_knowledge",
