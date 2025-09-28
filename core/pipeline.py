@@ -83,7 +83,7 @@ def score_resume(state: ResumeAnalysisState):
     RESUME:\n{resume_text}
     """
     scoring_model = chat_model.with_structured_output(ResumeScore)
-    r = scoring_model.invoke([{"role": "user", "content": scoring_prompt}])
+    r = scoring_model.invoke([{"role": "user", "content": scoring_prompt}], max_output_token=1024)
     return {"initial_score": {
         "overall_score": r.overall_score,
         "content_score": r.content_score,
@@ -165,19 +165,23 @@ def generate_improvement_suggestions(state: ResumeAnalysisState):
         msg = "Significant improvements required—here's the plan."
 
     prompt = f"""
-    Using the RAG knowledge and best practices below, generate a detailed improvement plan with: 
-    - 3–5 top priority changes (with expected point gains),
-    - before/after bullet rewrites using strong action verbs and metrics,
-    - missing industry-specific keywords for {detected},
-    - formatting/layout refinements for ATS friendliness,
-    - and a projected improved score.
+    Using the RAG knowledge and best practices below, generate a concise improvement plan with the following constraints:
 
-    CURRENT SCORE: {overall}/100 ({level})\n
-    RAG KNOWLEDGE:\n{rag_knowledge}\n
-    RESUME:\n{resume_text}
+    - Include **exactly 3–5 top priority changes**, each with a projected point gain.
+    - For each change, provide **1 before/after bullet rewrite** using strong action verbs and metrics.
+    - List **up to 3 missing industry-specific keywords** per change, do not repeat keywords.
+    - Include formatting/layout tips for ATS friendliness.
+    - Provide a projected improved overall score.
+    - **Stop generating after these items — do not continue with extra text.**
+
+    CURRENT SCORE: {overall}/100 ({level})
+    RAG KNOWLEDGE:
+    {rag_knowledge}
+    RESUME:
+    {resume_text}
     """
 
-    response = chat_model.invoke([{"role": "user", "content": prompt}], max_token=1024)
+    response = chat_model.invoke([{"role": "user", "content": prompt}], max_output_token=1024)
 
     suggestions_list = [
         "Priority improvements",
@@ -199,7 +203,7 @@ def generate_general_resume_advice(state: ResumeAnalysisState):
     Provide actionable resume advice for: "{q}"
     Cover structure, ATS tips, writing measurable bullets, and common mistakes.
     """
-    response = chat_model.invoke([{"role": "user", "content": advice_prompt}])
+    response = chat_model.invoke([{"role": "user", "content": advice_prompt}], max_output_token=1024)
     return {"messages": state["messages"] + [response]}
 
 

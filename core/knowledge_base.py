@@ -27,7 +27,8 @@ except RuntimeError:
 
 # Embedding model (requires GOOGLE_API_KEY in env)
 load_dotenv()
-_embeddings_model = os.environ.get("EMBEDDINGS_MODEL", "models/embedding-001")
+_embeddings_model = os.environ.get("GEMINI_EMBEDDING_MODEL", "models/embedding-001")
+# print("#"*30, _embeddings_model)
 topk = os.environ.get("EMBEDDINGS_TOPK", "5")
 # _embeddings_model = os.getenv("EMBEDDINGS_MODEL", "models/embedding-001")
 
