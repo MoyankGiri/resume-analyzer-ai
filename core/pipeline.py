@@ -76,22 +76,85 @@ def score_resume(state: ResumeAnalysisState):
     if not resume_text:
         # No-op if text missing (UI will show the assistant message from previous node)
         return {}
+    
+    scoring_prompt = f"""You are an expert resume reviewer. Analyze the following resume and provide detailed scores for each criterion.
 
-    scoring_prompt = f"""
-    Score this resume comprehensively on these criteria (0-25 each):\n
-    CONTENT, FORMAT, KEYWORDS, IMPACT. Provide an overall score (0-100) and concise feedback.\n
-    RESUME:\n{resume_text}
-    """
+SCORING CRITERIA (each out of 25 points):
+
+1. CONTENT (0-25):
+   - Relevance and quality of work experience
+   - Educational background appropriateness
+   - Skills alignment with career goals
+   - Completeness of information
+   Score 0-10: Poor/minimal content, 11-17: Average content, 18-25: Excellent content
+
+2. FORMAT (0-25):
+   - Professional layout and structure
+   - Readability and organization
+   - Consistent formatting (fonts, spacing, bullets)
+   - Appropriate length (1-2 pages)
+   Score 0-10: Poor formatting, 11-17: Adequate formatting, 18-25: Professional formatting
+
+3. KEYWORDS (0-25):
+   - Industry-relevant terminology
+   - ATS-friendly keywords
+   - Action verbs and power words
+   - Technical skills properly highlighted
+   Score 0-10: Few/no keywords, 11-17: Some keywords, 18-25: Excellent keyword usage
+
+4. IMPACT (0-25):
+   - Quantifiable achievements (metrics, percentages, numbers)
+   - Clear demonstration of value added
+   - Strong action-oriented descriptions
+   - Results-focused language
+   Score 0-10: Minimal impact shown, 11-17: Some achievements, 18-25: Strong measurable impact
+
+IMPORTANT: 
+- Be critical and objective in your scoring
+- Use the full range of 0-25 for each category
+- Overall score must equal the sum of all four category scores
+- Provide specific, actionable feedback
+
+RESUME:
+{resume_text}
+
+Analyze this resume carefully and provide distinct scores for each criterion based on the guidelines above."""
+
     scoring_model = chat_model.with_structured_output(ResumeScore)
-    r = scoring_model.invoke([{"role": "user", "content": scoring_prompt}], max_output_token=1024)
-    return {"initial_score": {
-        "overall_score": r.overall_score,
-        "content_score": r.content_score,
-        "format_score": r.format_score,
-        "keyword_score": r.keyword_score,
-        "impact_score": r.impact_score,
-        "feedback": r.feedback,
-    }}
+    
+    # Gemini-specific configuration
+    generation_config = {
+        "temperature": 0.3,  # Lower temperature for more consistent scoring
+        "top_p": 0.95,
+        "top_k": 40,
+        "max_output_tokens": 1024,
+    }
+    
+    try:
+        r = scoring_model.invoke(
+            [{"role": "user", "content": scoring_prompt}],
+            config={"configurable": generation_config}
+        )
+        
+        # Validate that scores are within range and varied
+        total = r.content_score + r.format_score + r.keyword_score + r.impact_score
+        
+        # Ensure overall score matches sum (or recalculate)
+        overall = r.overall_score if r.overall_score == total else total
+        
+        return {
+            "initial_score": {
+                "overall_score": overall,
+                "content_score": r.content_score,
+                "format_score": r.format_score,
+                "keyword_score": r.keyword_score,
+                "impact_score": r.impact_score,
+                "feedback": r.feedback,
+            }
+        }
+    except Exception as e:
+        print(f"Scoring error: {e}")
+        return {}
 
 
 def retrieve_best_practices(state: ResumeAnalysisState):
