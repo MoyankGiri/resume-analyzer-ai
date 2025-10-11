@@ -77,48 +77,71 @@ def score_resume(state: ResumeAnalysisState):
         # No-op if text missing (UI will show the assistant message from previous node)
         return {}
     
-    scoring_prompt = f"""You are an expert resume reviewer. Analyze the following resume and provide detailed scores for each criterion.
+    scoring_prompt = f"""You are an expert resume reviewer and scoring system. You will objectively evaluate the provided resume text using the defined scoring criteria. Be highly critical and data-driven — do not give all resumes similar scores. Penalize weak or missing evidence. 
 
-SCORING CRITERIA (each out of 25 points):
+---
 
-1. CONTENT (0-25):
-   - Relevance and quality of work experience
-   - Educational background appropriateness
-   - Skills alignment with career goals
-   - Completeness of information
-   Score 0-10: Poor/minimal content, 11-17: Average content, 18-25: Excellent content
+SCORING CRITERIA (each out of 25 points)
 
-2. FORMAT (0-25):
-   - Professional layout and structure
-   - Readability and organization
-   - Consistent formatting (fonts, spacing, bullets)
-   - Appropriate length (1-2 pages)
-   Score 0-10: Poor formatting, 11-17: Adequate formatting, 18-25: Professional formatting
+1. CONTENT (0-25)
+   - Evaluate relevance and quality of work experience.
+   - Check if education, skills, and experience align with professional goals.
+   - Assess completeness (presence of roles, companies, dates, education, and skills).
+   **Guidelines:** 
+     0-10 = poor or incomplete, 
+     11-17 = moderate relevance, 
+     18-25 = strong, complete, and relevant.
 
-3. KEYWORDS (0-25):
-   - Industry-relevant terminology
-   - ATS-friendly keywords
-   - Action verbs and power words
-   - Technical skills properly highlighted
-   Score 0-10: Few/no keywords, 11-17: Some keywords, 18-25: Excellent keyword usage
+2. FORMAT (0-25)
+   *Since this is a text input, evaluate format heuristically based on textual indicators only.*
+   - Logical sectioning (e.g., "Experience", "Education", "Skills").
+   - Clear role separation (e.g., bullet-like structure, line breaks, capitalization).
+   - Consistent structure in job descriptions (e.g., role-company-dates order).
+   - Overall readability (short sentences, no run-ons).
+   **Guidelines:** 
+     0-10 = disorganized text, 
+     11-17 = some structure but inconsistent, 
+     18-25 = consistently structured and easy to read.
 
-4. IMPACT (0-25):
-   - Quantifiable achievements (metrics, percentages, numbers)
-   - Clear demonstration of value added
-   - Strong action-oriented descriptions
-   - Results-focused language
-   Score 0-10: Minimal impact shown, 11-17: Some achievements, 18-25: Strong measurable impact
+3. KEYWORDS (0-25)
+   - Presence of industry-relevant and role-specific keywords (technical or domain).
+   - Use of strong action verbs (e.g., “Led”, “Implemented”, “Designed”).
+   - Evidence of ATS-friendly terminology.
+   **Guidelines:** 
+     0-10 = very few relevant keywords, 
+     11-17 = some relevant terms and verbs, 
+     18-25 = strong, targeted use of industry and role-specific language.
 
-IMPORTANT: 
-- Be critical and objective in your scoring
-- Use the full range of 0-25 for each category
-- Overall score must equal the sum of all four category scores
-- Provide specific, actionable feedback
+4. IMPACT (0-25)
+   - Frequency of measurable achievements (numbers, percentages, results).
+   - Clear demonstration of value or outcomes.
+   - Active and achievement-focused tone.
+   **Guidelines:** 
+     0-10 = minimal or vague achievements, 
+     11-17 = some clear contributions, 
+     18-25 = strong evidence of measurable impact.
 
-RESUME:
+---
+
+IMPORTANT INSTRUCTIONS
+- Be **strict and analytical** — use the full 0-25 range in each category.
+- Do **not** give similar scores unless resumes are truly equivalent.
+- Base your assessment **only** on textual evidence.
+- Provide **specific, actionable feedback** explaining why each category received its score.
+- The final output **must** follow the JSON schema exactly as below — no extra commentary.
+
+---
+
+RESUME TEXT:
 {resume_text}
 
-Analyze this resume carefully and provide distinct scores for each criterion based on the guidelines above."""
+---
+
+ADDITIONAL GUIDELINES
+- Always produce varied scores across different resumes.
+- If resume is extremely short, incomplete, or lacks structure, scores should be low (<50 overall).
+- If resume shows clear quantifiable results and role alignment, scores should be high (>80 overall).
+- Ensure the total always equals the sum of the four categories."""
 
     scoring_model = chat_model.with_structured_output(ResumeScore)
     
@@ -230,7 +253,7 @@ def generate_improvement_suggestions(state: ResumeAnalysisState):
     prompt = f"""
     Using the RAG knowledge and best practices below, generate a concise improvement plan with the following constraints:
 
-    - Include **exactly 3–5 top priority changes**, each with a projected point gain.
+    - Include **exactly 3-5 top priority changes**, each with a projected point gain.
     - For each change, provide **1 before/after bullet rewrite** using strong action verbs and metrics.
     - List **up to 3 missing industry-specific keywords** per change, do not repeat keywords.
     - Include formatting/layout tips for ATS friendliness.
